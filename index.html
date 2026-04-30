@@ -15,13 +15,14 @@
     body {
       background: #080810;
       color: #E8E8F0;
-      font-family: system-ui, sans-serif;
+      font-family: system-ui, -apple-system, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
+      padding: 24px;
     }
     .spinner {
       width: 36px; height: 36px;
@@ -31,18 +32,35 @@
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    #installBtn {
+      display: none;
+      width: 100%;
+      max-width: 320px;
+      padding: 16px;
+      background: #00D4FF;
+      color: #000;
+      border: none;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.2px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #installBtn:active { opacity: 0.85; }
   </style>
 </head>
 <body>
   <div style="font-size:52px">📻</div>
-  <div style="font-size:22px;font-weight:800;letter-spacing:-.3px">NightFly</div>
-  <div id="status" style="font-size:13px;opacity:.45">Connessione in corso…</div>
+  <div style="font-size:24px;font-weight:800;letter-spacing:-.3px">NightFly</div>
+  <div id="status" style="font-size:13px;opacity:.45;text-align:center">Connessione in corso…</div>
   <div class="spinner" id="spinner"></div>
+  <button id="installBtn">📲 Aggiungi alla Home</button>
 
   <script>
-    const PROD_URL  = 'http://frankpis.duckdns.org:8765';
-    const autoA2HS  = new URLSearchParams(location.search).get('a2hs') === '1';
-    let deferred    = null;
+    const PROD_URL = 'http://frankpis.duckdns.org:8765';
+    const autoA2HS = new URLSearchParams(location.search).get('a2hs') === '1';
+    let deferred   = null;
     let redirectTmr = null;
 
     function goToProd() {
@@ -56,17 +74,24 @@
       clearTimeout(redirectTmr);
 
       if (autoA2HS) {
-        document.getElementById('status').textContent = 'Aggiungi NightFly alla Home…';
-        setTimeout(() => {
-          const evt = deferred;
-          deferred = null;
-          if (!evt) { goToProd(); return; }
-          evt.prompt();
-          evt.userChoice.then(() => goToProd()).catch(() => goToProd());
-        }, 500);
+        // Mostra il bottone: il tap è il gesto diretto che permette prompt()
+        document.getElementById('status').textContent = 'Tocca il bottone per aggiungere NightFly alla Home';
+        document.getElementById('spinner').style.display = 'none';
+        document.getElementById('installBtn').style.display = 'block';
       } else {
         goToProd();
       }
+    });
+
+    document.getElementById('installBtn').addEventListener('click', () => {
+      const evt = deferred;
+      deferred = null;
+      if (!evt) { goToProd(); return; }
+      document.getElementById('installBtn').style.display = 'none';
+      document.getElementById('spinner').style.display = 'block';
+      document.getElementById('status').textContent = 'Installazione…';
+      evt.prompt();
+      evt.userChoice.then(() => goToProd()).catch(() => goToProd());
     });
 
     window.addEventListener('appinstalled', goToProd);
@@ -74,8 +99,8 @@
     if (!autoA2HS) {
       goToProd();
     } else {
-      // Aspetta beforeinstallprompt fino a 4 secondi, poi redirect comunque
-      redirectTmr = setTimeout(goToProd, 4000);
+      // Aspetta beforeinstallprompt fino a 5 secondi, poi redirect comunque
+      redirectTmr = setTimeout(goToProd, 5000);
     }
   </script>
 </body>
