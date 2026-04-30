@@ -1,21 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="refresh" content="0; url=http://frankpis.duckdns.org:8765">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NightFly">
+  <meta name="theme-color" content="#080810">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <title>NightFly</title>
   <style>
-    body { margin: 0; background: #080810; display: flex; align-items: center;
-           justify-content: center; height: 100vh; flex-direction: column;
-           font-family: sans-serif; color: white; }
-    a { color: #00D4FF; font-size: 18px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #080810;
+      color: #E8E8F0;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(0,212,255,0.15);
+      border-top-color: #00D4FF;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <div style="font-size:48px;margin-bottom:16px">📻</div>
-  <div style="font-size:22px;font-weight:800;margin-bottom:12px">NightFly</div>
-  <div style="font-size:13px;opacity:.5;margin-bottom:24px">Connessione al server in corso…</div>
-  <a href="http://frankpis.duckdns.org:8765">Tocca qui se non vieni reindirizzato</a>
-  <script>window.location.href = 'http://frankpis.duckdns.org:8765';</script>
+  <div style="font-size:52px">📻</div>
+  <div style="font-size:22px;font-weight:800;letter-spacing:-.3px">NightFly</div>
+  <div id="status" style="font-size:13px;opacity:.45">Connessione in corso…</div>
+  <div class="spinner" id="spinner"></div>
+
+  <script>
+    const PROD_URL  = 'http://frankpis.duckdns.org:8765';
+    const autoA2HS  = new URLSearchParams(location.search).get('a2hs') === '1';
+    let deferred    = null;
+    let redirectTmr = null;
+
+    function goToProd() {
+      clearTimeout(redirectTmr);
+      window.location.replace(PROD_URL);
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferred = e;
+      clearTimeout(redirectTmr);
+
+      if (autoA2HS) {
+        document.getElementById('status').textContent = 'Aggiungi NightFly alla Home…';
+        setTimeout(() => {
+          const evt = deferred;
+          deferred = null;
+          if (!evt) { goToProd(); return; }
+          evt.prompt();
+          evt.userChoice.then(() => goToProd()).catch(() => goToProd());
+        }, 500);
+      } else {
+        goToProd();
+      }
+    });
+
+    window.addEventListener('appinstalled', goToProd);
+
+    if (!autoA2HS) {
+      goToProd();
+    } else {
+      // Aspetta beforeinstallprompt fino a 4 secondi, poi redirect comunque
+      redirectTmr = setTimeout(goToProd, 4000);
+    }
+  </script>
 </body>
 </html>
